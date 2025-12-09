@@ -1,0 +1,23 @@
+[package]
+name = "rust-mage-game"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy = { version = "0.17.3", features = ["dynamic_linking"] }
+# improve runtime performance
+log = { version = "*", features = ["max_level_debug", "release_max_level_warn"] }
+
+
+# Enable a small amount of optimization in the dev profile.
+[profile.dev]
+opt-level = 1
+
+# Enable a large amount of optimization in the dev profile for dependencies.
+[profile.dev.package."*"]
+opt-level = 3
+
+# Alternative linker
+[target.x86_64-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
