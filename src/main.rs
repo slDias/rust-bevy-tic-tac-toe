@@ -10,15 +10,7 @@ enum CellValues {
 }
 
 #[derive(Component)]
-struct CellIndex {
-    x: usize,
-    y: usize
-}
-
-#[derive(Component, Clone, Copy)]
-struct Grid {
-    values: [[CellValues; 3]; 3]
-}
+struct Cell(CellValues);
 
 #[derive(Component)]
 struct WinLabel;
@@ -28,7 +20,7 @@ struct WinLabel;
 struct GameState {
     is_x_turn: bool,
     winner: CellValues,
-    processed_winner: bool
+    board: [[Entity; 3]; 3]
 }
 
 pub struct GamePlugin;
@@ -36,164 +28,121 @@ pub struct GamePlugin;
 impl Plugin for GamePlugin {
 
     fn build(&self, app: &mut App) {
-
-        let on_startup = (
-            initialize_game_state,
-            spawn_buttons
-        ).chain();
-
-        app.add_systems(Startup, on_startup);
+        app.add_systems(Startup, (initialize_game_state, spawn_buttons));
         app.add_systems(Update, check_for_winner);
     }
 }
 
 
 fn initialize_game_state(mut commands: Commands) {
-
     commands.spawn(Camera2d);
-    commands.spawn(Grid { values: [[CellValues::Empty; 3]; 3] });
-    commands.insert_resource(GameState { is_x_turn: true, winner: CellValues::Empty, processed_winner: false });
-
-    draw_grid(&mut commands);
+    let board = draw_board(&mut commands);
+    commands.insert_resource(GameState { is_x_turn: true, winner: CellValues::Empty, board });
 }
 
-fn draw_grid(commands: &mut Commands) {
+fn draw_board(commands: &mut Commands) -> [[Entity; 3]; 3] {
 
     const CELL_SIZE: f32 = 50.0;
-    const CELL_MARGIN: f32 = 5.0;
-    const TOP_LEFT_CELL: Vec2 = Vec2 {x: -55.0, y: -55.0};
+    const CELL_DISTANCE: f32 = CELL_SIZE + 5.0;
+    let mut cell_position = Transform::from_xyz(-CELL_DISTANCE, -CELL_DISTANCE, -1.0);
 
-    for row_index in 0..3 {
+    core::array::from_fn(|_| {
 
-        for column_index in 0..3 {
+        let row = core::array::from_fn(|_| {
 
-            let cell_offset = Vec2 {
-                x: (CELL_SIZE + CELL_MARGIN) * column_index as f32, 
-                y: (CELL_SIZE + CELL_MARGIN) * row_index as f32
-            };
+            let entity = commands
+                .spawn((
+                    Cell(CellValues::Empty), 
+                    Sprite::from_color(Color::WHITE, Vec2::ONE * CELL_SIZE), 
+                    cell_position, 
+                    Pickable::default()
+                ))
+                .observe(on_cell_clicked)
+                .id();
 
-            let cell_index = CellIndex {x: row_index as usize, y: column_index as usize};
+            cell_position.translation.x += CELL_DISTANCE;
+            entity
+        });
 
-            let cell_sprite = Sprite::from_color(Color::WHITE, Vec2::ONE * CELL_SIZE);
+        cell_position.translation.x = -CELL_DISTANCE;
+        cell_position.translation.y += CELL_DISTANCE;
 
-            let cell_screen_position = TOP_LEFT_CELL + cell_offset;
-            let cell_transform = Transform::from_xyz(
-                cell_screen_position.x, 
-                cell_screen_position.y, 
-                -1.0
-            );
-
-            commands
-                .spawn((cell_index, cell_sprite, cell_transform, Pickable::default()))
-                .observe(make_move);
-        }
-    }
+        row
+    })
+    
 }
 
-fn make_move(
+fn on_cell_clicked(
     event: On<Pointer<Press>>, 
-    mut query: Query<(&mut Sprite, &CellIndex)>, 
+    mut query: Query<(&mut Sprite, &mut Cell)>, 
     mut game_state: ResMut<GameState>, 
-    mut grid_query: Query<&mut Grid>,
     asset_server: Res<AssetServer>
 ) {
 
+    let (mut sprite, mut cell) = query.get_mut(event.entity).unwrap();
 
-    let Ok((mut sprite, cell)) = query.get_mut(event.entity) else {
-        return;
-    };
-
-    let Ok(mut grid) = grid_query.single_mut() else { return; };
-
-    if grid.values[cell.x][cell.y] != CellValues::Empty { return; }
+    if cell.0 != CellValues::Empty { return; }
 
     if game_state.is_x_turn {
         sprite.image = asset_server.load("X.png");
-        grid.values[cell.x][cell.y] = CellValues::X;
+        cell.0 = CellValues::X;
     } else {
         sprite.image = asset_server.load("O.png");
-        grid.values[cell.x][cell.y] = CellValues::Y;
-    }
-
-    if has_winner(&game_state, cell, &grid) {
-        if game_state.is_x_turn {
-            game_state.winner = CellValues::X;
-        } else {
-            game_state.winner = CellValues::Y;
-        }
-        return;
+        cell.0 = CellValues::Y;
     }
 
     game_state.is_x_turn = !game_state.is_x_turn;
 }
 
-fn has_winner(game_state: &GameState, last_play_position: &CellIndex, grid: &Grid) -> bool {
+fn get_winner(game_state: &GameState, cells: Query<&Cell>) -> CellValues {
 
-    let expected_value: CellValues = if game_state.is_x_turn {
-        CellValues::X
-    } else {
-        CellValues::Y
-    };
-
-    let mut vertical_counter = 0;
-    for i in last_play_position.x..3 {
-        if grid.values[i][last_play_position.y] == expected_value {
-            vertical_counter += 1;
-        }
+    fn count_values_in_sequence (sequence: impl Iterator<Item = Entity>, ref_value: CellValues, cells: Query<&Cell>) -> i32 {
+        sequence.fold(0,  |res, x| {
+            let cell = cells.get(x).unwrap();
+            if cell.0 == ref_value { res + 1 } else { res }
+        })
     }
 
-    for i in 0..last_play_position.x {
-        if grid.values[i][last_play_position.y] == expected_value {
-            vertical_counter += 1;
-        }
+    // check horizontal
+    for row in game_state.board {
+        let first_value = cells.get(row[0]).unwrap().0;
+        let count = count_values_in_sequence(row.into_iter(), first_value, cells);
+        if count == 3 { return first_value }
     }
 
-    if vertical_counter == 3 {
-        return true;
+    // check vertical
+    for column in 0..3 {
+        let first_value = cells.get(game_state.board[0][column]).unwrap().0;
+        let sequence = game_state.board.into_iter().map(|x| x[column]);
+        let count = count_values_in_sequence(sequence, first_value, cells);
+        if count == 3 { return first_value }
     }
 
-    let mut horizontal_counter = 0;
-    for i in last_play_position.y..3 {
-        if grid.values[last_play_position.x][i] == expected_value {
-            horizontal_counter += 1;
-        }
+    // check diagonal up-right
+    {
+        let first_value = cells.get(game_state.board[0][0]).unwrap().0;
+        let sequence = (0..3).map(|i| game_state.board[i][i]);
+        let count = count_values_in_sequence(sequence, first_value, cells);
+        if count == 3 { return first_value }
+    }
+    // check diagonal up-left
+    {
+        let first_value = cells.get(game_state.board[0][2]).unwrap().0;
+        let sequence = (0..3).map(|i| game_state.board[i][2 - i]);
+        let count = count_values_in_sequence(sequence, first_value, cells);
+        if count == 3 { return first_value }
     }
 
-    for i in 0..last_play_position.y {
-        if grid.values[last_play_position.x][i] == expected_value {
-            horizontal_counter += 1;
-        }
-    }
-
-    if horizontal_counter == 3 {
-        return true;
-    }
-
-    let northeast = [
-        grid.values[0][0], grid.values[1][1], grid.values[2][2]
-    ];
-    
-    if northeast.iter().all(|&v| v == expected_value) {
-        return true;
-    }
-
-    let northwest = [
-        grid.values[2][0], grid.values[1][1], grid.values[0][2]
-    ];
-
-    if northwest.iter().all(|&v| v == expected_value) {
-        return true;
-    }
-
-    false
+    CellValues::Empty
 }
 
-fn check_for_winner(mut game_state: ResMut<GameState>, query: Query<Entity, With<CellIndex>>, mut commands: Commands) {
-    if game_state.winner == CellValues::Empty || game_state.processed_winner { return; }
+fn check_for_winner(mut game_state: ResMut<GameState>, cells_query: Query<&Cell>, cell_entities: Query<Entity, With<Cell>>, mut commands: Commands) {
 
-    println!("has winner!");
+    game_state.winner = get_winner(&game_state, cells_query);
 
-    for obs in query.iter() {
+    if game_state.winner == CellValues::Empty { return; };
+
+    for obs in cell_entities.iter() {
         commands.entity(obs).remove::<Pickable>();
     }
 
@@ -208,9 +157,6 @@ fn check_for_winner(mut game_state: ResMut<GameState>, query: Query<Entity, With
         },
         WinLabel
     ));
-
-    game_state.processed_winner = true;
-
 }
 
 fn spawn_buttons(mut commands: Commands) {
@@ -227,27 +173,25 @@ fn spawn_buttons(mut commands: Commands) {
         BackgroundColor(Color::srgb(0.5, 0.5, 0.5)),
         children![Text::new("Restart")],
     );
-    commands.spawn(bundle).observe(button_event_handler);
+    commands.spawn(bundle).observe(on_restart_clicked);
 }
 
-fn button_event_handler(
+type DespawnQueryFilter = Or<(With<Cell>, With<WinLabel>)>;
+
+fn on_restart_clicked(
     _event: On<Activate>,
-    to_despawn_query: Query<Entity, Or<(With<Grid>, With<CellIndex>, With<WinLabel>)>>,
+    despawn_query: Query<Entity, DespawnQueryFilter>,
     mut game_state: ResMut<GameState>,
     mut commands: Commands
 ) {
     // remove grid and cells
-    for ent in to_despawn_query.iter() {
+    for ent in despawn_query.iter() {
         commands.entity(ent).despawn();
     }
 
     game_state.is_x_turn = true;
-    game_state.processed_winner = false;
     game_state.winner = CellValues::Empty;
-
-    commands.spawn(Grid { values: [[CellValues::Empty; 3]; 3] });
-
-    draw_grid(&mut commands);
+    game_state.board = draw_board(&mut commands);
 }
 
 
