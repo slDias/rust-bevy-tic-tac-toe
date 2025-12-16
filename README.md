@@ -1,6 +1,15 @@
 # Tic-Tac-Toe
 
-A Rust/Bevy learning project
+A Rust/Bevy learning project.
+
+Prior to this my experience with rust is only parts of the rust book (around chapter 7). 
+I've 3 written small CLI apps before: 
+- the guessing game (from the book)
+- an agenda as a way to exercise what I've learn from the book
+- a CLI tic-tac-toe as a way to practice structs and enums specifically
+(these can be found [here](https://github.com/slDias/rust-book/tree/main))
+
+Beyond this I've been practicing Rust with [leetcode](https://leetcode.com/u/slDyas/) exercises as well.
 
 ## Implementation overview
 
