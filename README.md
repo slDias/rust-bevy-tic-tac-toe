@@ -4,7 +4,69 @@ A Rust/Bevy learning project
 
 ## Implementation overview
 
+### Entities
 
+##### Cells
+
+Represents a cell on the 3x3 grid.
+
+A bundle of:
+
+- CellValues with the value of the cell
+- A Sprite to draw the square
+- A Pickable with an observer for clicks on the sprite
+- A transform to position it on screen
+
+##### Restart Button
+
+A button that is used to restart the game
+
+A bundle of:
+
+- Button, a headless button from bevy's experimental_bevy_ui_widgets feature
+- Node and some styling as an UI for the button
+
+##### Winner Label
+
+A text label used to display the winner of the game.
+
+A bundle of:
+
+- WinLabel, an empty struct that serves as an identifier.
+- Text and some styling.
+- Node and some styling.
+
+##### Camera
+
+contains only Bevy's Camera2d to render everything.
+
+### Custom Components
+
+##### CellValues
+
+An enum with value: X, Y or Empty
+
+##### WinLabel
+
+An empty struct used as an identifier
+
+### Systems Resources
+
+##### GameState
+
+A struct with:
+
+- is_x_turn: true if the next play is from X player
+- winner: A CellValue member, starts as CellValues::Empty
+- board: A matrix that keeps the Entity.id() of each Cell
+
+On each frame all possible winning combinations are checked by querying the CellValues components and using the GameState.Board to fetch the Cell entities throught Query.get().
+
+
+## Planned Implementation overview
+
+The following are notes of how I invisioned the implementation before doing it.
+It does not reflect the current implementation and it is here for a mere comparison on how development went.
 
 ### Components
 
@@ -43,6 +105,10 @@ A Rust/Bevy learning project
 
 ## Devlog notes
 
+#### 2025-12-16
+Just did some cleaning up on the check winner logic, simplified the cell component a bit more.
+I'm satisfied with the code and I believe I've learned enough from this game.
+
 #### 2025-12-15
 considering a better architecture:
 
@@ -51,6 +117,8 @@ add 8 relationship between components: up, up_right, right, down_right, down, do
 
 ##### idea 2 - Matrix of entities
 Board as a resource but it is a matrix of entities
+
+ended up developing the matrix of entities idea
 
 
 #### 2025-12-11
