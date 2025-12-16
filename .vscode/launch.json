@@ -5,27 +5,16 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug executable 'rust-mage-game'",
+            "name": "Debug executable 'tic-tac-toe'",
             "type": "lldb",
             "request": "launch",
             "cargo": {
                 "args": [
                     "run",
-                    "--bin=rust-mage-game"
+                    "--bin=tic-tac-toe"
                 ]
             },
             "args": []
-        },
-        {
-            "name": "Debug unit tests in executable 'rust-mage-game'",
-            "type": "lldb",
-            "request": "launch",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--bin=rust-mage-game"
-                ]
-            }
         }
     ]
 }
