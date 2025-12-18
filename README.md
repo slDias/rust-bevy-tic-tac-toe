@@ -12,6 +12,35 @@ I've written 3 small CLI apps before:
 
 Beyond this I've been practicing Rust with [leetcode](https://leetcode.com/u/slDyas/) exercises as well.
 
+## Running
+
+### Locally
+
+You'll need [rust](https://rust-lang.org/learn/get-started/) to build it.
+
+clone the repository and open a terminal in it, then:
+
+```
+cargo run
+```
+
+It will take some time to build it on the first run.
+
+It was developed and tested using Debian.
+
+### Container
+
+There is a web assembly image that will eventually be available through github pages. 
+For now, it's possible to run it by building the image yourself:
+
+```
+podman build --tag tic-tac-toe .
+podman run --detach --publish 4000:4000 tic-tac-toe
+```
+
+Then it will be available at http://localhost:4000/
+
+
 ## Implementation overview
 
 ### Entities
