@@ -32,8 +32,10 @@ jobs:
         run: rustup target add wasm32-unknown-unknown && cargo build --verbose --release --target wasm32-unknown-unknown
       - name: Move files
         run: mv ./target/wasm32-unknown-unknown/release/tic-tac-toe.wasm ./wasm/tic-tac-toe.wasm
-      - name: wasm bindings
+      - name: Generate wasm bindings
         run: cargo install wasm-bindgen-cli && wasm-bindgen --out-name tic-tac-toe --out-dir wasm --target web wasm/tic-tac-toe.wasm
+      - name: Move static assets
+        run: mv ./assets ./wasm/assets
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Build with Jekyll
