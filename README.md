@@ -14,6 +14,10 @@ Beyond this I've been practicing Rust with [leetcode](https://leetcode.com/u/slD
 
 ## Running
 
+### WebAssembly
+
+A WebAssembly build is available at sldias.github.io/rust-bevy-tic-tac-toe/
+
 ### Locally
 
 You'll need [rust](https://rust-lang.org/learn/get-started/) to build it.
@@ -30,8 +34,7 @@ It was developed and tested using Debian.
 
 ### Container
 
-There is a web assembly image that will eventually be available through github pages. 
-For now, it's possible to run it by building the image yourself:
+There is a web assembly image that can run locally and it's equivalent to the build at [github pages](https://sldias.github.io/rust-bevy-tic-tac-toe/).
 
 ```
 podman build --tag tic-tac-toe .
