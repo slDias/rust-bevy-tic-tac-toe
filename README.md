@@ -16,7 +16,7 @@ Beyond this I've been practicing Rust with [leetcode](https://leetcode.com/u/slD
 
 ### WebAssembly
 
-A WebAssembly build is available at sldias.github.io/rust-bevy-tic-tac-toe/
+A WebAssembly build is available at [sldias.github.io/rust-bevy-tic-tac-toe/](https://sldias.github.io/rust-bevy-tic-tac-toe/)
 
 ### Locally
 
