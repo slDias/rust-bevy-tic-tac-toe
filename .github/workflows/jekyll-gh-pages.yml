@@ -33,7 +33,7 @@ jobs:
       - name: Move files
         run: mv ./target/wasm32-unknown-unknown/release/tic-tac-toe.wasm ./wasm/tic-tac-toe.wasm
       - name: Generate wasm bindings
-        run: cargo install wasm-bindgen-cli && wasm-bindgen --out-name tic-tac-toe --out-dir wasm --target web wasm/tic-tac-toe.wasm
+        run: cargo install -f wasm-bindgen-cli --version 0.2.106 && wasm-bindgen --out-name tic-tac-toe --out-dir wasm --target web wasm/tic-tac-toe.wasm
       - name: Move static assets
         run: mv ./assets ./wasm/assets
       - name: Setup Pages
